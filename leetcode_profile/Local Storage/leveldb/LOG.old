@@ -1,2 +1,3 @@
-2026/01/27-11:51:57.554 3c24 Creating DB D:\codingProjects\Apps\leetcode-daily-reminder\leetcode_profile\Local Storage\leveldb since it was missing.
-2026/01/27-11:51:57.565 3c24 Reusing MANIFEST D:\codingProjects\Apps\leetcode-daily-reminder\leetcode_profile\Local Storage\leveldb/MANIFEST-000001
+2026/01/27-13:52:37.985 4170 Reusing MANIFEST D:\codingProjects\Apps\leetcode-daily-reminder\leetcode_profile\Local Storage\leveldb/MANIFEST-000001
+2026/01/27-13:52:38.010 4170 Recovering log #3
+2026/01/27-13:52:38.010 4170 Reusing old log D:\codingProjects\Apps\leetcode-daily-reminder\leetcode_profile\Local Storage\leveldb/000003.log 

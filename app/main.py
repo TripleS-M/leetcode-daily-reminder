@@ -1,5 +1,9 @@
 import sys
 import os
+import json
+import random
+from datetime import datetime, date, timedelta
+
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
@@ -8,17 +12,59 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
 )
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QUrl, QTimer
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage
 
+# Deletes streak.json temporarily to simulate new day (uncomment code to reset day)
+#import os
+#streak_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "streak.json")
+#if os.path.exists(streak_file):
+#    os.remove(streak_file)
 
+
+TEST_Mode = True
+# -------------------
+# Streak Storage Utils
+# -------------------
+STREAK_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "streak.json")
+
+def load_streak():
+    try:
+        with open(STREAK_FILE, "r") as f:
+            data = json.load(f)
+            return data
+    except FileNotFoundError:
+        return {"streak": 0, "last_done": None}
+
+def save_streak(streak, last_done):
+    with open(STREAK_FILE, "w") as f:
+        json.dump({"streak": streak, "last_done": last_done}, f)
+
+
+def update_streak():
+    data = load_streak()
+    today_str = date.today().isoformat()
+
+    if data["last_done"] == (date.today() - timedelta(days=1)).isoformat():
+        streak = data["streak"] + 1  # consecutive
+    else:
+        streak = 1  # reset or first day
+
+    save_streak(streak, today_str)
+    print(f"Streak updated! Current streak: {streak}")
+
+
+# -------------------
+# Browser Window
+# -------------------
 class BrowserWindow(QWidget):
     def __init__(self, url):
         super().__init__()
         self.setWindowTitle("LeetCode")
         self.resize(1200, 800)
 
+        # Persistent profile
         profile_path = os.path.join(os.getcwd(), "leetcode_profile")
         os.makedirs(profile_path, exist_ok=True)
 
@@ -36,10 +82,17 @@ class BrowserWindow(QWidget):
         layout.addWidget(self.browser)
         self.setLayout(layout)
 
-        self.destroyed.connect(QApplication.quit)
+        # Close browser → update streak and quit app
+        self.destroyed.connect(self.on_close)
+
+    def on_close(self):
+        update_streak()
+        QApplication.quit()
 
 
-
+# -------------------
+# Reminder Popup
+# -------------------
 class ReminderPopup(QWidget):
     def __init__(self):
         super().__init__()
@@ -67,21 +120,68 @@ class ReminderPopup(QWidget):
 
     def on_yes(self):
         print("User clicked YES")
+        update_streak()
         QApplication.quit()
 
     def on_no(self):
         print("User clicked NO")
-        # Open the embedded browser
         self.browser_window = BrowserWindow(url="https://leetcode.com/problemset/all/")
         self.browser_window.show()
-        # Close the popup
         self.close()
 
 
+# -------------------
+# App Startup & Scheduler
+# -------------------
+def schedule_popup():
+
+    if TEST_Mode:
+        delay_ms = 1000
+        print("Test mode: Popup will appear in 1 second")
+        QTimer.singleShot(delay_ms, show_popup)
+        return
+
+    # Random time between X and Y
+    start_hour = 12
+    end_hour = 13
+
+    now = datetime.now()
+    hour = random.randint(start_hour, end_hour - 1)
+    minute = random.randint(4, 6)
+
+    popup_time = datetime(now.year, now.month, now.day, hour, minute)
+    if popup_time < now:
+        popup_time += timedelta(days=1)
+
+    delay_ms = int((popup_time - now).total_seconds() * 1000)
+    print(f"Popup scheduled at {popup_time.strftime('%H:%M:%S')} (in {delay_ms/1000:.0f}s)")
+
+    QTimer.singleShot(delay_ms, show_popup)
+
+
+def show_popup():
+    app = QApplication.instance()
+    app.popup_window = ReminderPopup()
+    app.popup_window.show()
+
+    # popup = ReminderPopup()
+    # popup.show()
+    # return popup
+
+
 def main():
+    # Load streak and check if already done today
+    data = load_streak()
+    today_str = date.today().isoformat()
+    if data["last_done"] == today_str:
+        print("Already completed today! Exiting...")
+        return  # Exit app
+
     app = QApplication(sys.argv)
-    popup = ReminderPopup()
-    popup.show()
+
+    # Schedule popup at random time
+    schedule_popup()
+
     sys.exit(app.exec())
 
 
