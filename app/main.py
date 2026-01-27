@@ -10,17 +10,25 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage
 
 # -------------------
+# Base directory (handles Python vs EXE)
+# -------------------
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.getcwd()  # EXE folder
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
+STREAK_FILE = os.path.join(BASE_DIR, "streak.json")
+LEETCODE_PROFILE = os.path.join(BASE_DIR, "leetcode_profile")
+
+# -------------------
 # Config
 # -------------------
-CONFIG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
-STREAK_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "streak.json")
-LEETCODE_PROFILE = os.path.join(os.getcwd(), "leetcode_profile")
-
 def load_config():
     default_config = {
         "start_hour": 9,
         "end_hour": 21,
-        "test_mode": True,
+        "test_mode": False,
         "popup_message": "Have you done a LeetCode question today?",
         "leetcode_url": "https://leetcode.com/problemset/all/"
     }
@@ -39,7 +47,7 @@ config = load_config()
 TEST_MODE = config["test_mode"]
 
 # -------------------
-# Streak Storage Utils
+# Streak Storage
 # -------------------
 def initialize_streak():
     if not os.path.exists(STREAK_FILE):
@@ -49,8 +57,7 @@ def initialize_streak():
 def load_streak():
     try:
         with open(STREAK_FILE, "r") as f:
-            data = json.load(f)
-            return data
+            return json.load(f)
     except FileNotFoundError:
         return {"streak": 0, "last_done": None}
 
@@ -62,9 +69,9 @@ def update_streak():
     data = load_streak()
     today_str = date.today().isoformat()
     if data["last_done"] == (date.today() - timedelta(days=1)).isoformat():
-        streak = data["streak"] + 1  # consecutive
+        streak = data["streak"] + 1
     else:
-        streak = 1  # reset
+        streak = 1
     save_streak(streak, today_str)
     print(f"Streak updated! Current streak: {streak}")
 
@@ -100,7 +107,7 @@ class BrowserWindow(QWidget):
 # -------------------
 # Reminder Popup
 # -------------------
-popup_window = None  # keep reference alive
+popup_window = None
 browser_window = None
 
 class ReminderPopup(QWidget):
@@ -138,7 +145,7 @@ class ReminderPopup(QWidget):
         self.close()
 
 # -------------------
-# App Startup & Scheduler
+# App Scheduler
 # -------------------
 def show_popup():
     global popup_window
@@ -165,44 +172,48 @@ def schedule_popup():
     print(f"Popup scheduled at {popup_time.strftime('%H:%M:%S')} (in {delay_ms/1000:.0f}s)")
     QTimer.singleShot(delay_ms, show_popup)
 
-class DevPanel(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Dev/Test Panel")
-        self.resize(300, 150)
+# -------------------
+# Dev Panel (TEST_MODE only)
+# -------------------
+if TEST_MODE:
+    class DevPanel(QWidget):
+        def __init__(self):
+            super().__init__()
+            self.setWindowTitle("Dev/Test Panel")
+            self.resize(300, 150)
 
-        show_popup_btn = QPushButton("Show Popup Now")
-        reset_streak_btn = QPushButton("Reset Streak")
-        toggle_test_btn = QPushButton(f"TEST_MODE: {TEST_MODE}")
+            show_popup_btn = QPushButton("Show Popup Now")
+            reset_streak_btn = QPushButton("Reset Streak")
+            toggle_test_btn = QPushButton(f"TEST_MODE: {TEST_MODE}")
 
-        show_popup_btn.clicked.connect(self.show_popup_now)
-        reset_streak_btn.clicked.connect(self.reset_streak)
-        toggle_test_btn.clicked.connect(lambda: self.toggle_test(toggle_test_btn))
+            show_popup_btn.clicked.connect(self.show_popup_now)
+            reset_streak_btn.clicked.connect(self.reset_streak)
+            toggle_test_btn.clicked.connect(lambda: self.toggle_test(toggle_test_btn))
 
-        layout = QVBoxLayout()
-        layout.addWidget(show_popup_btn)
-        layout.addWidget(reset_streak_btn)
-        layout.addWidget(toggle_test_btn)
-        self.setLayout(layout)
+            layout = QVBoxLayout()
+            layout.addWidget(show_popup_btn)
+            layout.addWidget(reset_streak_btn)
+            layout.addWidget(toggle_test_btn)
+            self.setLayout(layout)
 
-    def show_popup_now(self):
-        show_popup()
+        def show_popup_now(self):
+            show_popup()
 
-    def reset_streak(self):
-        save_streak(0, None)
-        print("Streak reset to 0")
+        def reset_streak(self):
+            save_streak(0, None)
+            print("Streak reset to 0")
 
-    def toggle_test(self, button):
-        global TEST_MODE
-        TEST_MODE = not TEST_MODE
-        button.setText(f"TEST_MODE: {TEST_MODE}")
-        print(f"TEST_MODE set to {TEST_MODE}")
+        def toggle_test(self, button):
+            global TEST_MODE
+            TEST_MODE = not TEST_MODE
+            button.setText(f"TEST_MODE: {TEST_MODE}")
+            print(f"TEST_MODE set to {TEST_MODE}")
 
 # Deletes streak.json temporarily to simulate new day (uncomment code to reset day)
-import os
-streak_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "streak.json")
-if os.path.exists(streak_file):
-    os.remove(streak_file)
+# import os
+# streak_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "streak.json")
+# if os.path.exists(streak_file):
+#     os.remove(streak_file)
 
 # -------------------
 # Main
@@ -218,7 +229,6 @@ def main():
     app = QApplication(sys.argv)
 
     if TEST_MODE:
-        # Show developer panel for testing
         dev_panel = DevPanel()
         dev_panel.show()
     else:
@@ -229,3 +239,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
