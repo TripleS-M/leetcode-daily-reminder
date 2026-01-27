@@ -161,12 +161,17 @@ def schedule_popup():
     end_hour = config["end_hour"]
 
     now = datetime.now()
+
+    # Pick today's random time
     hour = random.randint(start_hour, end_hour - 1)
     minute = random.randint(0, 59)
-
     popup_time = datetime(now.year, now.month, now.day, hour, minute)
-    if popup_time < now:
-        popup_time += timedelta(days=1)
+
+    # NEW LOGIC: if time already passed, show immediately
+    if popup_time <= now:
+        print("Scheduled time already passed — showing popup now")
+        show_popup()
+        return
 
     delay_ms = int((popup_time - now).total_seconds() * 1000)
     print(f"Popup scheduled at {popup_time.strftime('%H:%M:%S')} (in {delay_ms/1000:.0f}s)")
@@ -210,10 +215,10 @@ if TEST_MODE:
             print(f"TEST_MODE set to {TEST_MODE}")
 
 # Deletes streak.json temporarily to simulate new day (uncomment code to reset day)
-# import os
-# streak_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "streak.json")
-# if os.path.exists(streak_file):
-#     os.remove(streak_file)
+#import os
+#streak_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "streak.json")
+#if os.path.exists(streak_file):
+    #os.remove(streak_file)
 
 # -------------------
 # Main
@@ -239,4 +244,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

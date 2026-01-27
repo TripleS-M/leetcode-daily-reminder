@@ -1,7 +1,7 @@
 {
     "start_hour": 9,
     "end_hour": 21,
-    "test_mode": true,
+    "test_mode": false,
     "popup_message": "Have you done a LeetCode question today?",
     "leetcode_url": "https://leetcode.com/problemset/all/"
 }
