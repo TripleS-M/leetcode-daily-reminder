@@ -38,11 +38,7 @@ A lightweight desktop application designed to keep your LeetCode streak alive. I
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Run the app:
+3. Run the app:
    ```bash
    python app/main.py
    ```
@@ -73,7 +69,6 @@ leetcode-daily-reminder/
 ├── config.json            # App configuration (auto-generated on first run)
 ├── streak.json            # Local streak tracking (auto-generated)
 ├── leetcode_profile/      # Browser session data (auto-generated)
-├── requirements.txt       # Python dependencies
 └── README.md
 ```
 
